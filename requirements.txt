@@ -1,0 +1,3 @@
+herestreamlit
+google-generativeai
+PyPDF2
