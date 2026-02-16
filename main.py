@@ -1,83 +1,58 @@
-    import streamlit as st
+import streamlit as st
 import google.generativeai as genai
 from PyPDF2 import PdfReader
 from PIL import Image
-import io
 
-# --- 1. إعدادات الصفحة ---
-st.set_page_config(page_title="MOATASEM AI", page_icon="🧠", layout="wide")
+# 1. تعريف المطور (إلزامياً كما طلبت)
+DEVELOPER_NAME = "معتصم نبيل المليكي"
 
-# --- 2. التصميم CSS ---
-st.markdown("""
-    <style>
-    .stApp { background: #0e1117; }
-    footer {visibility: hidden;}
-    .developer-footer {
-        position: fixed; bottom: 10px; right: 15px;
-        color: #666; font-size: 12px;
-    }
-    </style>
-    <div class="developer-footer">Developed by: MOATASEM AI</div>
-    """, unsafe_allow_html=True)
+# 2. إعدادات الموقع
+st.set_page_config(page_title="MOATASEM AI", page_icon="🚀")
 
-# --- 3. إعدادات API (المفتاح الصحيح) ---
-API_KEY = "AIzaSyCC69LDLdON1hSCQ1QIr7zRFvTLouCFV-s" 
+# 3. ربط المفتاح (تأكد من وضع المفتاح الكامل الذي أرسلته لي)
+API_KEY = "AIzaSyCC69LDLdON1hSCQ1QIr7zRFvTLouCFV-s"
 genai.configure(api_key=API_KEY)
 
-# الحل هنا: جربنا 'gemini-pro' لأنه الأكثر استقراراً ومجاني تماماً
-try:
-    model = genai.GenerativeModel('gemini-pro')
-except:
-    model = genai.GenerativeModel('gemini-1.5-flash-latest')
+# 4. محرك ذكي يختار النسخة المتاحة تلقائياً
+def get_model():
+    models_to_try = ['gemini-1.5-flash', 'gemini-pro']
+    for m in models_to_try:
+        try:
+            return genai.GenerativeModel(m)
+        except:
+            continue
+    return None
 
-# --- 4. إدارة الجلسة ---
+model = get_model()
+
+# 5. واجهة المستخدم
+st.title(f"🤖 محرك {DEVELOPER_NAME}")
+st.write("مرحباً بك في نظامك الخاص للذكاء الاصطناعي")
+
 if "messages" not in st.session_state:
     st.session_state.messages = []
-if "context" not in st.session_state:
-    st.session_state.context = ""
 
-# --- 5. القائمة الجانبية ---
-with st.sidebar:
-    st.title("🤖 MOATASEM AI")
-    uploaded_files = st.file_uploader("ارفع ملفاتك", type=["pdf", "jpg", "png"], accept_multiple_files=True)
-    if st.button("مسح المحادثة"):
-        st.session_state.messages = []
-        st.rerun()
-
-# --- 6. معالجة الملفات ---
-if uploaded_files:
-    text_content = ""
-    for file in uploaded_files:
-        if file.type == "application/pdf":
-            reader = PdfReader(file)
-            for page in reader.pages:
-                text_content += page.extract_text() + "\n"
-    st.session_state.context = text_content
-    st.sidebar.success("✅ تم تجهيز البيانات")
-
-# --- 7. الواجهة والدردشة ---
-st.markdown("<h2 style='text-align: center;'>🧠 محرك معتصم للذكاء الاصطناعي</h2>", unsafe_allow_html=True)
-
+# عرض الدردشة
 for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-if prompt := st.chat_input("كيف يمكنني مساعدتك؟"):
+# إدخال السؤال
+if prompt := st.chat_input("اسألني أي شيء..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
 
     with st.chat_message("assistant"):
-        if any(w in prompt.lower() for w in ["من صنعك", "من طورك", "who made you"]):
-            response_text = "تم تطويري بواسطة المبدع **معتصم نبيل المليكي**."
+        # الرد المخصص عن المطور
+        if any(word in prompt.lower() for word in ["من طورك", "من صنعك", "who created you"]):
+            res = f"تم تطويري وبرمجتي بواسطة المبدع **{DEVELOPER_NAME}**."
         else:
             try:
-                # دمج السؤال مع سياق الملفات
-                full_input = f"Context: {st.session_state.context[:5000]}\nQuestion: {prompt}"
-                response = model.generate_content(full_input)
-                response_text = response.text
-            except Exception as e:
-                response_text = "عذراً، المحرك يحتاج للتحديث. تأكد من اتصال الإنترنت وحاول مجدداً."
-
-        st.markdown(response_text)
-        st.session_state.messages.append({"role": "assistant", "content": response_text})
+                response = model.generate_content(prompt)
+                res = response.text
+            except:
+                res = "حدث خطأ بسيط، حاول إعادة كتابة السؤال."
+        
+        st.markdown(res)
+        st.session_state.messages.append({"role": "assistant", "content": res})
