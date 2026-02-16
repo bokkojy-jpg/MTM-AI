@@ -26,7 +26,7 @@ st.markdown("""
 
 # ربط الذكاء الاصطناعي - يرجى التأكد من صلاحية المفتاح
 # ملاحظة: إذا استمر الخطأ، ستحتاج لإنشاء مفتاح جديد من aistudio.google.com
-API_KEY = "gen-lang-client-0933546265" 
+API_KEY = "AIzaSyBfur9KMmyQzkYs6IDa-4HwoW1ZRTFXXXk" 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
 
