@@ -1,58 +1,40 @@
 import streamlit as st
 import google.generativeai as genai
-from PyPDF2 import PdfReader
-from PIL import Image
 
-# 1. تعريف المطور (إلزامياً كما طلبت)
-DEVELOPER_NAME = "معتصم نبيل المليكي"
-
-# 2. إعدادات الموقع
-st.set_page_config(page_title="MOATASEM AI", page_icon="🚀")
-
-# 3. ربط المفتاح (تأكد من وضع المفتاح الكامل الذي أرسلته لي)
+# إعداد المفتاح
 API_KEY = "AIzaSyCC69LDLdON1hSCQ1QIr7zRFvTLouCFV-s"
 genai.configure(api_key=API_KEY)
 
-# 4. محرك ذكي يختار النسخة المتاحة تلقائياً
-def get_model():
-    models_to_try = ['gemini-1.5-flash', 'gemini-pro']
-    for m in models_to_try:
-        try:
-            return genai.GenerativeModel(m)
-        except:
-            continue
-    return None
+st.title("🤖 MOATASEM AI")
 
-model = get_model()
+# محاولة الاتصال بصيغة بسيطة جداً
+try:
+    # هنا جربنا استدعاء الموديل بدون كلمة models/ وبدون إضافات
+    model = genai.GenerativeModel('gemini-1.5-flash')
+    
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-# 5. واجهة المستخدم
-st.title(f"🤖 محرك {DEVELOPER_NAME}")
-st.write("مرحباً بك في نظامك الخاص للذكاء الاصطناعي")
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+    if prompt := st.chat_input("تحدث معي..."):
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-# عرض الدردشة
-for msg in st.session_state.messages:
-    with st.chat_message(msg["role"]):
-        st.markdown(msg["content"])
-
-# إدخال السؤال
-if prompt := st.chat_input("اسألني أي شيء..."):
-    st.session_state.messages.append({"role": "user", "content": prompt})
-    with st.chat_message("user"):
-        st.markdown(prompt)
-
-    with st.chat_message("assistant"):
-        # الرد المخصص عن المطور
-        if any(word in prompt.lower() for word in ["من طورك", "من صنعك", "who created you"]):
-            res = f"تم تطويري وبرمجتي بواسطة المبدع **{DEVELOPER_NAME}**."
-        else:
-            try:
+        with st.chat_message("assistant"):
+            if "من صنعك" in prompt or "من طورك" in prompt:
+                res = "تم تطويري بواسطة المبدع معتصم نبيل المليكي."
+            else:
+                # محاولة توليد نص
                 response = model.generate_content(prompt)
                 res = response.text
-            except:
-                res = "حدث خطأ بسيط، حاول إعادة كتابة السؤال."
-        
-        st.markdown(res)
-        st.session_state.messages.append({"role": "assistant", "content": res})
+            
+            st.markdown(res)
+            st.session_state.messages.append({"role": "assistant", "content": res})
+
+except Exception as e:
+    st.error(f"خطأ في الاتصال: {e}")
+    st.info("تأكد من أنك ضغطت على زر 'Copy Key' الحقيقي من Google AI Studio")
